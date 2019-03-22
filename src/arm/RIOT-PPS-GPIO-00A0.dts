@@ -1,0 +1,84 @@
+/*
+ * GPIO PPS ( GPS Timepulse ) on GPIO 1_29 / P8_26
+ * GPIO RESETn on GPIO 1_28 / P9_12
+ */
+ 
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+	/* identification */
+	part-number = "RIOT-PPS-GPIO";
+	version = "00A0";
+	
+	/* state the resources this cape uses */
+	exclusive-use =
+	/* the pin header uses */
+	"P9.12",	/* GPS RESETn */
+	"P8.26";	/* pps gpio */
+
+	/*
+	 * Free up the pins used by the cape from the pinmux helpers.
+	 */
+	fragment@0 {
+		target = <&ocp>;
+		__overlay__ {
+			P8_26_pinmux { status = "disabled"; };	/* GPS PPS */
+			P9_12_pinmux { status = "disabled"; };  /* GPS RESET GPIO */
+		};
+	};
+
+	fragment@1 {
+		target = <&am33xx_pinmux>;
+		__overlay__ {
+			pps_pins: pinmux_pps_pins {
+				pinctrl-single,pins = <
+					0x07c	0x27	/* gpmc_a0.gpio1_29 : pps irq, INPUT | PULLDWN | MODE7 */
+					0x078	0x17 	/* gpmc_a0.gpio1_28 : reset, OUTPUT | PULLUP | MODE7 */
+				>;
+			};
+		};
+	};
+	
+
+	fragment@2 {
+		target = <&ocp>;
+		__overlay__ {
+			GPS_reset {
+				compatible = "gpio-of-helper";
+				status = "okay";
+				pinctrl-names = "default";
+				pinctrl-0 = <>;
+				
+				gpio-name = "GPS_reset";
+				gpio = <&gpio1 28 0>;
+				output;
+			};
+		};
+	};
+
+	fragment@3 {
+		target = <&ocp>;
+		__overlay__ {
+			pps {
+				compatible = "pps-gpio";
+				status = "okay";
+				pinctrl-names = "default";
+				pinctrl-0 = <&pps_pins>;
+
+				gpios = <&gpio1 29 0>; /**/
+				assert-falling-edge;
+			};
+		};
+	};
+};
+
+/*
+* dtc -O dtb -o RIOT-PPS-GPIO-00A0.dtbo -b 0 -@ RIOT-PPS-GPIO-00A0.dts
+* cp RIOT-PPS-GPIO-00A0.dtbo /lib/firmware
+* nano uEnv.txt
+* uboot_overlay_addr5=/lib/firmware/RIOT-PPS-GPIO-00A0.dtbo
+
+*/

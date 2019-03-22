@@ -1,0 +1,108 @@
+/* SPI2  
+ * gpio2_13:SCK , gpio2_11:MISO ,gpio2_9:MOSI , gpio2_7:CS , on P8 pins 40,42,44,46
+ * TODO add GPIO controls for SX1301 / 1308
+ */
+
+/dts-v1/;
+/plugin/;
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+    /* identification */
+    part-number = "RIOT-SPI-GPIO-LORA";
+	version = "00A0";
+	
+	
+	/* state the resources this cape uses */
+	exclusive-use =
+	/* the pin header uses */
+	"P8.40",	/* bitbang SPI SCK */
+	"P8.42",	/* bitbang SPI MISO */
+	"P8.44",	/* bitbang SPI MOSI */
+	"P8.46"; 	/* bitbang SPI CS */
+	/* the hardware ip uses */
+	
+	/*
+	 * Free up the pins used by the cape from the pinmux helpers.
+	 */
+	 
+	fragment@0 {
+		target = <&ocp>;
+		__overlay__ {
+		/*GPIO SPI 2 pins*/
+			P8_40_pinmux { status = "disabled"; };	/* P8_40: GPIO2_13 MODE7 | INPUT | PULLUP , gpio no 77 */
+			P8_42_pinmux { status = "disabled"; };	/* P8_42: GPIO2_11 MODE7 | INPUT | PULLUP , gpio no 75 */
+			P8_44_pinmux { status = "disabled"; };	/* P8_44: GPIO2_9 MODE7 | OUTPUT | PULLUP , gpio no 73 */
+			P8_46_pinmux { status = "disabled"; };  /* P8_46: GPIO2_7 MODE7 | OUTPUT | PULLUP , gpio no 71 */
+		
+		};
+	};
+	
+    fragment@1 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+			gpio_spi2_pins: pinmux_gpio_spi2_pins {
+					pinctrl-single,pins = <
+							0x0bc 0x37      /* P8_40, GPIO mode (7) , INPUT_PULLUP | MODE7  : spi_gpio SCK*/
+							0x0b4 0x37      /* P8_42, GPIO mode (7) , INPUT_PULLUP | MODE7  : spi_gpio MISO*/
+							0x0ac 0x17      /* P8_44, GPIO mode (7) , OUTPUT_PULLUP | MODE7 : spi_gpio MOSI*/
+							0x0a4 0x17      /* P8_46, GPIO mode (7) , OUTPUT_PULLUP | MODE7 : spi_gpio CS*/
+				>;
+			};
+		};
+	};
+	
+	fragment@2 {
+		target = <&ocp>;
+		__overlay__ {
+			spigpio {
+				compatible = "spi-gpio";
+				status = "okay";
+				
+				pinctrl-names = "default";
+				pinctrl-0 = <&gpio_spi2_pins>;
+				
+				#address-cells = <0x1>;
+				#size-cells = <0>;
+				
+				/* new api- doesnt seem to work on bbb */
+				/*ranges;*/
+				/*sck-gpios = <&gpio2 13 0>;*/
+				/*miso-gpios = <&gpio2 11 0>;*/
+				/*mosi-gpios = <&gpio2 9 0>;*/
+				/*cs-gpios = <&gpio2 7 0>;*/
+				
+				/* legacy api */
+				gpio-sck = <&gpio2 13 0>;
+				gpio-miso = <&gpio2 11 0>;
+				gpio-mosi = <&gpio2 9 0>;
+				cs-gpios = <&gpio2 7 0>;
+				
+				num-chipselects = <1>;
+				
+				/* clients */
+				spidev@1 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					 spi-max-frequency = <200000>; /*Maximum set to 200kHz , but realistically we get around 185 kHz*/
+					 reg = <0>;
+					 compatible = "spidev";
+				};
+			};
+		};
+	};
+};
+
+/*
+dtc -O dtb -o RIOT-SPI-GPIO-LORA-00A0.dtbo -b 0 -@ RIOT-SPI-GPIO-LORA-00A0.dts
+
+			P8_40_gpio_pu_pin: pinmux_P8_40_gpio_pu_pin { pinctrl-single,pins = <  		  		gpio2_13 
+						AM33XX_IOPAD(0x08bc, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7) >; };  	
+			P8_42_gpio_pu_pin: pinmux_P8_42_gpio_pu_pin { pinctrl-single,pins = <				gpio2_11 
+						AM33XX_IOPAD(0x08b4, PIN_OUTPUT_PULLUP | INPUT_EN | MUX_MODE7) >; }; 	 
+			P8_44_gpio_pu_pin: pinmux_P8_44_gpio_pu_pin { pinctrl-single,pins = <				gpio2_9 
+						AM33XX_IOPAD(0x08ac, PIN_OUTPUT_PULLUP  | MUX_MODE7) >; }; 				
+			P8_46_gpio_pu_pin: pinmux_P8_46_gpio_pu_pin { pinctrl-single,pins = <				gpio2_7 
+						AM33XX_IOPAD(0x08a4, PIN_OUTPUT_PULLUP  | MUX_MODE7) >; }; 			 	
+*/

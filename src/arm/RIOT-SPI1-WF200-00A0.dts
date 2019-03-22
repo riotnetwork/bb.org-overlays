@@ -1,0 +1,145 @@
+/* SPI1 
+* D1 Output and D0 Input 
+Wkup : 1_17 : P9.23
+Resetn : 3_21 : P9.25
+Wirq : 3_19 : P9.27 
+*/
+
+/dts-v1/;
+/plugin/;
+
+//#include <dt-bindings/board/am335x-bbw-bbb-base.h>
+//#include <dt-bindings/pinctrl/am33xx.h>
+
+/{
+    compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+    /* identification */
+    part-number = "RIOT-SPI1-WF200";
+	version = "00A0";
+	
+	
+	/* state the resources this cape uses */
+	exclusive-use =
+	/* the pin header uses */
+	"P9.31",	/* spi1_sclk */
+	"P9.29",	/* spi1_d0 */
+	"P9.30",	/* spi1_d1 */
+	"P9.28",    /* spi1_cs0 */
+	
+	"P9.23",	/* WF200 WKUP */
+	"P9.25",    /* WF200 RESETn */
+	
+	"P9.27",    /* WF200 WiRQ */
+	
+	/* the hardware ip uses */
+	"spi1";		/* Real SPI1 peripheral - Wifi */
+	
+	/*
+	 * Free up the pins used by the cape from the pinmux helpers.
+	 */
+	 
+	fragment@0 {
+		target = <&ocp>;
+		__overlay__ {
+			/* SPI 1 pins*/
+			P9_28_pinmux { status = "disabled"; };	/* spi1_cs0 */
+			P9_30_pinmux { status = "disabled"; };	/* spi1_d1 */
+			P9_29_pinmux { status = "disabled"; };	/* spi1_d0 */
+			P9_31_pinmux { status = "disabled"; };	/* spi1_sclk */
+			
+			P9_23_pinmux { status = "disabled"; };	/* WF200 WKUP */
+			P9_25_pinmux { status = "disabled"; };	/* WF200 RESETn */
+			
+			P9_27_pinmux { status = "disabled"; };	/* WF200 WiRQ */
+		};
+	};
+	
+    fragment@1 {
+        target = <&am33xx_pinmux>;
+        __overlay__ {
+			wfx_spi1_pins: pinmux_wfx_spi1_pins {
+						pinctrl-single,pins = <
+						/*OFFSET CONFIG|MODE*/
+								0x190 0x33      /* mcasp0_aclkx.spi1_sclk, INPUT_PULLUP | MODE3 */
+								0x194 0x33      /* mcasp0_fsx.spi1_d0, INPUT_PULLUP | MODE3 */
+								0x198 0x13      /* mcasp0_axr0.spi1_d1, OUTPUT_PULLUP | MODE3 */
+								0x19c 0x13      /* mcasp0_ahclkr.spi1_cs0, OUTPUT_PULLUP | MODE3 */
+								// 0x164 0x12 /* eCAP0_in_PWM0_out.spi1_cs1 OUTPUT_PULLUP | MODE2 */
+				>;
+			};
+			
+			wfx_irq: pinmux_wfx_irq_pins {
+						pinctrl-single,pins = <
+						/*OFFSET CONFIG|MODE*/
+								0x1a4 0x27      /* gpio3_19 : WiRQ, INPUT_PULLDWN | MODE3 */							
+				>;
+			};
+			
+			wfx_gpios: pinmux_wfx_gpios_pins {
+						pinctrl-single,pins = <
+						/*OFFSET CONFIG|MODE*/
+								0x044 0x17      /* gpio1_17 : Wkup , OUTPUT_PULLUP | MODE3 */
+								0x1ac 0x17      /* gpio3_21 : RESETn, OUTPUT_PULLUP | MODE3 */		
+				>;
+			};
+		};
+	};
+	
+	
+    fragment@2 { /* real SPI port 1 */
+        target = <&spi1>;
+        __overlay__ {
+
+             #address-cells = <1>;
+             #size-cells = <0>;
+			 
+             status = "okay";
+			 pinctrl-names = "default";
+			 pinctrl-0 = <&wfx_spi1_pins>;
+
+             wfx: spidev@0 {
+					spi-max-frequency = <42000000>; /* BBB max is 48MHz*/
+					#address-cells = <1>;
+					#size-cells = <0>;
+					
+					// "silabs,wfx-spi" is mandatory.
+					// Use "siliconlabs,wfx-wlan-spi" for compatibility with driver < 1.3
+					// Append "spidev" to be able to also use spidev driver
+					compatible = "silabs,wfx-spi", "siliconlabs,wfx-wlan-spi", "linux,spidev";
+					pinctrl-names = "default";
+					pinctrl-0 = <&wfx_irq &wfx_gpios>;
+				 
+					/* out of kernel build gives a syntax error : needs include/dt-bindings/gpio/gpio.h*/
+					/*interrupts-extended = <&gpio3 19 IRQ_TYPE_EDGE_RISING>;*/
+					/* option 1 */
+					/*interrupt-parent = <&gpio3>;*/
+					/*interrupts = <19 0x0>;*/
+					/* option 2 */
+					interrupts-extended = <&gpio3 19 1>;
+					
+					wakeup-gpios = <&gpio1 17 0>;
+					/* out of kernel build gives a syntax error : needs include/dt-bindings/gpio/gpio.h*/
+					/*wakeup-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;*/
+					
+					reset-gpios = <&gpio1 21 0>;
+					/* out of kernel build gives a syntax error : needs include/dt-bindings/gpio/gpio.h*/
+					/*reset-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;*/
+					
+					config-file = "wf200.pds"; // necessary for dtparam
+					
+					reg = <0>;
+            };
+        };
+    };
+};
+
+/*
+nano RIOT-SPI1-WF200-00A0.dts
+* dtc -O dtb -o RIOT-SPI1-WF200-00A0.dtbo -b 0 -@ RIOT-SPI1-WF200-00A0.dts
+
+* cp RIOT-SPI1-WF200-00A0.dtbo /lib/firmware
+* uEnv.txt
+* uboot_overlay_addr6=/lib/firmware/RIOT-SPI1-WF200-00A0.dtbo
+
+*/
