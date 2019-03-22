@@ -3,12 +3,29 @@ Build Status
  [![Build Status](http://rcn-ee.online:8080/buildStatus/icon?job=beagleboard_overlays/master)](http://rcn-ee.online:8080/job/beagleboard_overlays/job/master/)
 
 
-Users:
+Users (on BBB) :
 ------------
 
 Install or Update bb-cape-overlays debian package (pre installed on: Debian Jessie/Stretch & Ubuntu Xenial images)
 
     sudo apt update ; sudo apt install bb-cape-overlays
+
+Developers( on Cross compile Development machine or BBB ):
+------------
+
+Step 1: Clone this repo and build correct dtc version:
+
+    git clone https://github.com/beagleboard/bb.org-overlays
+    cd ./bb.org-overlays
+    ./dtc-overlay.sh
+
+Step 2: Build (all) Overlays
+
+    make all
+
+Step 3: Install *.dtbo ( on BBB ):
+
+    ./install.sh
 
 Supported Linux Kernels:
 ------------
@@ -17,6 +34,9 @@ Pre-built kernels: (there are multiple options avaiable)
 
     cd /opt/scripts/tools
     git pull
+
+
+
 
 Supported Linux Kernels: v4.19.x:
 ------------
@@ -94,22 +114,6 @@ v4.4.x mainline + Real Time:
 
     sudo /opt/scripts/tools/update_kernel.sh --lts-4_4 --bone-rt-channel
 
-Developers:
-------------
-
-Step 1: Clone this repo and build correct dtc version:
-
-    git clone https://github.com/beagleboard/bb.org-overlays
-    cd ./bb.org-overlays
-    ./dtc-overlay.sh
-
-Step 2: Build (all) Overlays
-
-    make all
-
-Step 3: Install *.dtbo ( on BBB ):
-
-    ./install.sh
 
 Developers: Tested Versions of dtc:
 ------------
