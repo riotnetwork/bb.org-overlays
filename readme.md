@@ -97,12 +97,17 @@ v4.4.x mainline + Real Time:
 Developers:
 ------------
 
-Step 1: Clone this repo:
+Step 1: Clone this repo and build correct dtc version:
 
     git clone https://github.com/beagleboard/bb.org-overlays
     cd ./bb.org-overlays
+    ./dtc-overlay.sh
 
-Step 2: Install *.dtbo:
+Step 2: Build (all) Overlays
+
+    make all
+
+Step 3: Install *.dtbo ( on BBB ):
 
     ./install.sh
 
