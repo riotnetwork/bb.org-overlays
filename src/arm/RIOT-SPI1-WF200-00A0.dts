@@ -122,11 +122,11 @@ Wirq : 3_19 : P9.27
 					/* out of kernel build gives a syntax error : needs include/dt-bindings/gpio/gpio.h*/
 					/*wakeup-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;*/
 					
-					reset-gpios = <&gpio1 21 0>;
+					reset-gpios = <&gpio3 21 0>;
 					/* out of kernel build gives a syntax error : needs include/dt-bindings/gpio/gpio.h*/
 					/*reset-gpios = <&gpio1 21 GPIO_ACTIVE_HIGH>;*/
 					
-					config-file = "wf200.pds"; // necessary for dtparam
+					//config-file = "wf200.pds"; // necessary for dtparam
 					
 					reg = <0>;
             };
